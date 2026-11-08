@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Color Palette Extractor</title>
+
+<style>
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap");
+
+:root {
+  color-scheme: light;
+  --text: #583b48;
+  --muted: #876875;
+  --pink: #b93670;
+  --border: #efd0dd;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: "DM Sans", Arial, sans-serif;
+  background:
+    radial-gradient(circle at 12% 15%, #ffdfeb 0, transparent 33%),
+    radial-gradient(circle at 90% 60%, #f2e4ff 0, transparent 30%),
+    #fff8f5;
+}
+
+button, select, input { font: inherit; }
+
+button:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid #ad386c;
+  outline-offset: 4px;
+}
+
+.decorations {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.decoration {
+  position: absolute;
+  color: #eaa6c1;
+  font-size: 42px;
+  opacity: .65;
+}
+
+.decoration:nth-child(1) { top: 12%; left: 3%; transform: rotate(-15deg); }
+.decoration:nth-child(2) { top: 39%; right: 3%; font-size: 30px; }
+.decoration:nth-child(3) { bottom: 13%; left: 2%; font-size: 30px; }
+.decoration:nth-child(4) { top: 8%; right: 8%; font-size: 24px; }
+.decoration:nth-child(5) { bottom: 7%; right: 6%; transform: rotate(15deg); }
+
+main {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: auto;
+  padding: 22px 24px 25px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid #efd9e1;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Outfit", Arial, sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+}
+
+.brand-icon {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 12px;
+  background: #f9dce8;
+  color: #ae3e70;
+  font-size: 23px;
+}
+
+.top-note {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+header {
+  position: relative;
+  text-align: center;
+  padding: 28px 10px 26px;
+}
+
+.bow {
+  display: block;
+  width: 80px;
+  height: 53px;
+  margin: 0 auto 8px;
+  overflow: visible;
+}
+
+.badge {
+  display: inline-block;
+  padding: 8px 15px;
+  border: 1px solid #edc9d8;
+  border-radius: 999px;
+  color: #a2446c;
+  background: #fffdfb;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+}
+
+h1 {
+  margin: 14px 0 10px;
+  font-family: "Outfit", Arial, sans-serif;
+  font-size: clamp(34px, 4.5vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -1.8px;
+  font-weight: 700;
+}
+
+h1 span { color: #b63e73; }
+
+header p {
+  max-width: 490px;
+  margin: auto;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+.mini-palette {
+  display: flex;
+  justify-content: center;
+  margin-top: 21px;
+  padding-bottom: 5px;
+}
+
+.mini-card {
+  width: 45px;
+  height: 53px;
+  margin-left: -5px;
+  padding: 5px 5px 13px;
+  border: 1px solid #ead4dd;
+  border-radius: 5px;
+  background: white;
+  box-shadow: 0 5px 10px #8c506215;
+  transform: rotate(var(--angle));
+}
+
+.mini-card::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--shade);
+  content: "";
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, .95fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.panel {
+  position: relative;
+  min-width: 0;
+  padding: 25px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: #ffffffed;
+  box-shadow: 0 14px 35px #a1547210;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 20px;
+}
+
+.step {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  border: 1px solid #f1c9da;
+  border-radius: 13px;
+  background: #fff0f6;
+  color: #a63b6c;
+  font-weight: 700;
+}
+
+h2 {
+  margin: 0;
+  font-family: "Outfit", Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -.5px;
+}
+
+.heading-note {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.corner-flower {
+  position: absolute;
+  top: -14px;
+  right: 20px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #efd0dd;
+  border-radius: 50%;
+  background: #fff8fb;
+  color: #bd5a86;
+  font-size: 25px;
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 265px;
+  padding: 23px;
+  border: 2px dashed #e7b7cc;
+  border-radius: 18px;
+  background:
+    radial-gradient(#efc9d8 .8px, transparent .8px),
+    #fff7fa;
+  background-size: 15px 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color .2s, border-color .2s, box-shadow .2s;
+}
+
+.dropzone:hover, .dropzone.dragover {
+  border-color: #bd5280;
+  background-color: #ffedf5;
+  box-shadow: 0 0 0 4px #f8e4ed;
+}
+
+.dropzone[aria-disabled="true"] {
+  opacity: .65;
+  cursor: wait;
+}
+
+.upload-art {
+  position: relative;
+  width: 93px;
+  height: 78px;
+  margin: 0 auto 19px;
+}
+
+.upload-art .photo {
+  position: absolute;
+  top: 9px;
+  left: 17px;
+  width: 62px;
+  height: 62px;
+  padding: 6px 6px 14px;
+  border: 1px solid #e9c5d5;
+  border-radius: 6px;
+  background: white;
+  transform: rotate(-9deg);
+  box-shadow: 0 6px 12px #ac69851a;
+}
+
+.upload-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+}
+
+.upload-art .sparkle {
+  position: absolute;
+  top: -3px;
+  right: 0;
+  color: #c7779c;
+  font-size: 25px;
+}
+
+.upload-art .heart {
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  color: #cc7398;
+  font-size: 23px;
+}
+
+.dropzone strong {
+  display: block;
+  font-family: "Outfit", Arial, sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.dropzone p {
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.preview-frame {
+  position: relative;
+  max-width: 100%;
+  padding: 11px 11px 29px;
+  border: 1px solid #ebd4dd;
+  background: white;
+  box-shadow: 0 9px 20px #8d4d681a;
+}
+
+.preview-frame::before {
+  position: absolute;
+  top: -12px;
+  left: calc(50% - 30px);
+  width: 60px;
+  height: 23px;
+  background: #efbed1cc;
+  transform: rotate(-5deg);
+  content: "";
+  pointer-events: none;
+}
+
+#preview {
+  display: block;
+  max-width: 100%;
+  max-height: 310px;
+  object-fit: contain;
+}
+
+.preview-frame::after {
+  position: absolute;
+  right: 12px;
+  bottom: 5px;
+  color: #c66d95;
+  font-size: 16px;
+  content: "♡";
+}
+
+#fileName {
+  margin: 11px 0;
+  overflow-wrap: anywhere;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #c4477e, #ad3065);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 16px #b83d7026;
+}
+
+button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+button.secondary {
+  border-color: #efd0df;
+  background: #fff1f7;
+  color: #9b3d66;
+}
+
+#another {
+  width: 100%;
+  margin-top: 13px;
+}
+
+label {
+  display: block;
+  margin: 21px 0 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+select {
+  width: 100%;
+  min-height: 47px;
+  padding: 12px;
+  border: 1px solid #e9c7d7;
+  border-radius: 12px;
+  background: #fffbfd;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.hint {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+#extract { flex: 1; }
+#resetButton { min-width: 80px; }
+
+#status {
+  margin: 0 0 16px;
+  padding: 11px 13px;
+  border: 1px solid #efd3df;
+  border-radius: 12px;
+  background: #fff3f8;
+  color: #9a3d66;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+#status.error {
+  border-color: #efbec6;
+  background: #fff0f1;
+  color: #a02d42;
+}
+
+#palette {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 13px;
+  max-height: 650px;
+  padding: 3px 5px 6px 2px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e2adc5 #fff4f8;
+}
+
+.empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 345px;
+  padding: 25px 16px;
+  border: 1px dashed #edc9da;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at center, #fff0f7, transparent 72%),
+    #fffdfb;
+  text-align: center;
+}
+
+.empty-icon {
+  position: relative;
+  width: 90px;
+  height: 85px;
+  margin-bottom: 15px;
+  color: #bc6a91;
+  font-size: 54px;
+  line-height: 85px;
+}
+
+.empty-icon::before, .empty-icon::after {
+  position: absolute;
+  font-size: 21px;
+  line-height: 1;
+  content: "✧";
+}
+
+.empty-icon::before { top: 3px; right: 0; }
+.empty-icon::after { bottom: 8px; left: 0; }
+
+.empty h3 {
+  margin: 0 0 9px;
+  font-family: "Outfit", Arial, sans-serif;
+  font-size: 23px;
+  font-weight: 500;
+}
+
+.empty p {
+  max-width: 250px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.color {
+  min-width: 0;
+  padding: 6px;
+  overflow: hidden;
+  border: 1px solid #ecd4df;
+  border-radius: 15px;
+  background: white;
+  box-shadow: 0 4px 10px #89536b0a;
+  transition: transform .2s, box-shadow .2s;
+}
+
+.color:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 9px 18px #89536b1a;
+}
+
+.swatch {
+  height: 110px;
+  border: 1px solid #00000008;
+  border-radius: 10px;
+}
+
+.details { padding: 12px 7px 7px; }
+
+.details strong {
+  display: block;
+  margin-bottom: 6px;
+  font-family: "Outfit", Arial, sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.details small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.copy-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.copy-actions button {
+  flex: 1;
+  min-height: 31px;
+  padding: 7px 5px;
+  border-radius: 8px;
+  font-size: 10px;
+}
+
+#download {
+  width: 100%;
+  margin-top: 17px;
+}
+
+.little-note {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px dashed #eed6e0;
+  text-align: center;
+  color: #956477;
+  font-family: Georgia, serif;
+  font-size: 13px;
+  font-style: italic;
+}
+
+footer {
+  margin-top: 25px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 11px;
+}
+
+@media (min-width: 960px) {
+  .layout > .panel:first-child {
+    position: sticky;
+    top: 20px;
+  }
+}
+
+@media (max-width: 800px) {
+  main { max-width: 620px; padding: 18px 16px 25px; }
+  .layout { grid-template-columns: 1fr; gap: 26px; }
+  header { padding-top: 23px; }
+  .panel { padding: 22px; }
+  .top-note { display: none; }
+  .decoration { opacity: .35; }
+}
+
+@media (max-width: 420px) {
+  h1 { font-size: 36px; letter-spacing: -1.3px; }
+  h2 { font-size: 20px; }
+  .badge { font-size: 8px; letter-spacing: 1.2px; }
+  #palette { grid-template-columns: 1fr; }
+  .dropzone { min-height: 245px; padding: 18px; }
+}
+
+@keyframes appear {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+header, .panel { animation: appear .45s ease both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="decorations" aria-hidden="true">
+  <span class="decoration">✿</span>
+  <span class="decoration">✧</span>
+  <span class="decoration">♡</span>
+  <span class="decoration">✧</span>
+  <span class="decoration">✿</span>
+</div>
+
+<main>
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-icon" aria-hidden="true">✿</span>
+      Your little color studio
+    </div>
+    <span class="top-note">A little inspiration, endless possibilities ♡</span>
+  </div>
+
+  <header>
+    <svg class="bow" viewBox="0 0 120 80" aria-hidden="true">
+      <path d="M54 37C42 18 12 5 9 22C5 44 29 51 54 43Z"
+            fill="#efb1ca" stroke="#ce7c9f" stroke-width="2"/>
+      <path d="M66 37C78 18 108 5 111 22C115 44 91 51 66 43Z"
+            fill="#efb1ca" stroke="#ce7c9f" stroke-width="2"/>
+      <path d="M54 43L35 72L52 66L58 76L63 44"
+            fill="#f6c7da" stroke="#ce7c9f" stroke-width="2"/>
+      <path d="M66 43L85 72L68 66L62 76L57 44"
+            fill="#f6c7da" stroke="#ce7c9f" stroke-width="2"/>
+      <path d="M18 24L51 38M102 24L69 38"
+            fill="none" stroke="#d98cad" stroke-width="2"/>
+      <rect x="51" y="30" width="18" height="20" rx="7"
+            fill="#df92b2" stroke="#c7789b" stroke-width="2"/>
+    </svg>
+
+    <span class="badge">MADE OF LITTLE COLORFUL MOMENTS</span>
+    <h1>Color Palette <span>Extractor</span></h1>
+    <p>
+      A pretty home for your inspiration. Turn your favorite images
+      into palettes for your next design, artwork, or poster.
+    </p>
+
+    <div class="mini-palette" aria-hidden="true">
+      <span class="mini-card" style="--shade:#e9b6ca;--angle:-15deg"></span>
+      <span class="mini-card" style="--shade:#f4d8bc;--angle:-7deg"></span>
+      <span class="mini-card" style="--shade:#dbcce8;--angle:1deg"></span>
+      <span class="mini-card" style="--shade:#c8d7c5;--angle:8deg"></span>
+      <span class="mini-card" style="--shade:#c57896;--angle:16deg"></span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <section class="panel">
+      <span class="corner-flower" aria-hidden="true">✿</span>
+
+      <div class="panel-heading">
+        <span class="step">1</span>
+        <div>
+          <h2>Choose your inspiration</h2>
+          <p class="heading-note">Every lovely palette starts with an image.</p>
+        </div>
+      </div>
+
+      <form id="form">
+        <input id="image" type="file" accept="image/jpeg,image/png" hidden>
+
+        <div
+          id="dropzone"
+          class="dropzone"
+          role="button"
+          tabindex="0"
+          aria-label="Upload an image by clicking or dropping a file"
+        >
+          <div id="placeholder">
+            <div class="upload-art" aria-hidden="true">
+              <span class="photo">
+                <svg viewBox="0 0 60 50">
+                  <rect width="60" height="50" fill="#f7dce8"/>
+                  <circle cx="43" cy="13" r="6" fill="#fff7d9"/>
+                  <path d="M0 43L20 19L38 43Z" fill="#d4a4bd"/>
+                  <path d="M23 50L43 27L60 45V50Z" fill="#b985a5"/>
+                </svg>
+              </span>
+              <span class="sparkle">✧</span>
+              <span class="heart">♡</span>
+            </div>
+
+            <strong>Drop a little inspiration here</strong>
+            <p>Drag &amp; drop your image, or click to browse</p>
+            <p>JPG or PNG · Under 8 MB · Up to 20 megapixels</p>
+          </div>
+
+          <div class="preview-frame" id="previewFrame" hidden>
+            <img id="preview" alt="Selected image preview" hidden>
+          </div>
+        </div>
+
+        <p id="fileName" hidden></p>
+
+        <button id="another" type="button" class="secondary">
+          Upload Another Image
+        </button>
+
+        <label for="count">Number of colors</label>
+        <select id="count">
+          <option value="auto">Auto Extraction</option>
+          <option value="1">1 color</option>
+          <option value="2">2 colors</option>
+          <option value="3">3 colors</option>
+          <option value="4">4 colors</option>
+          <option value="5" selected>5 colors</option>
+          <option value="6">6 colors</option>
+          <option value="7">7 colors</option>
+          <option value="8">8 colors</option>
+          <option value="9">9 colors</option>
+          <option value="10">10 colors</option>
+        </select>
+
+        <p class="hint">
+          Choose Auto Extraction to find shade groups without a
+          10-color limit, or select a fixed number.
+        </p>
+
+        <div class="actions">
+          <button id="extract" type="submit" disabled>Extract colors</button>
+          <button id="resetButton" type="button" class="secondary">Reset</button>
+        </div>
+      </form>
+
+      <p class="little-note">A little image. A lovely palette. ♡</p>
+    </section>
+
+    <section class="panel">
+      <span class="corner-flower" aria-hidden="true">✧</span>
+
+      <div class="panel-heading">
+        <span class="step">2</span>
+        <div>
+          <h2>Your color collection</h2>
+          <p class="heading-note">Little shades, ready for your next big idea.</p>
+        </div>
+      </div>
+
+      <p id="status" role="status" aria-live="polite">
+        Ready when you are. Upload an image to get started.
+      </p>
+
+      <div id="palette"></div>
+
+      <button id="download" type="button" disabled>
+        Download palette PNG
+      </button>
+    
+    </section>
+  </div>
+
+  <footer>Made for designers, students, and creative hearts. ♡</footer>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  const imageInput = $("image");
+  const preview = $("preview");
+  const palette = $("palette");
+  const count = $("count");
+  const dropzone = $("dropzone");
+
+  let selectedFile = null;
+  let previewURL = null;
+  let colors = [];
+  let busy = false;
+
+  function message(text, error = false) {
+    $("status").textContent = text;
+    $("status").classList.toggle("error", error);
+  }
+
+  function clearPalette() {
+    colors = [];
+
+    const empty = document.createElement("div");
+    empty.className = "empty";
+
+    const icon = document.createElement("div");
+    icon.className = "empty-icon";
+    icon.textContent = "♡";
+    icon.setAttribute("aria-hidden", "true");
+
+    const title = document.createElement("h3");
+    title.textContent = "Your next palette starts here";
+
+    const text = document.createElement("p");
+    text.textContent = "Upload an image and click Extract colors.";
+
+    empty.append(icon, title, text);
+    palette.replaceChildren(empty);
+    $("download").disabled = true;
+  }
+
+  function clearPreview() {
+    preview.hidden = true;
+    $("previewFrame").hidden = true;
+    preview.removeAttribute("src");
+    $("placeholder").hidden = false;
+    $("fileName").hidden = true;
+    $("fileName").textContent = "";
+
+    if (previewURL) {
+      URL.revokeObjectURL(previewURL);
+    }
+
+    previewURL = null;
+  }
+
+  function setBusy(value) {
+    busy = value;
+    imageInput.disabled = value;
+    count.disabled = value;
+    $("another").disabled = value;
+    $("resetButton").disabled = value;
+    $("extract").disabled = value || !selectedFile;
+    $("download").disabled = value || colors.length === 0;
+
+    $("extract").textContent = value
+      ? "Extracting..."
+      : "Extract colors";
+
+    dropzone.setAttribute("aria-disabled", String(value));
+  }
+
+  function selectFile(file) {
+    if (busy || !file) return;
+
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      imageInput.value = "";
+      message("Please choose a JPG or PNG image.", true);
+      return;
+    }
+
+    if (file.size >= 8 * 1024 * 1024) {
+      imageInput.value = "";
+      message("Please choose an image smaller than 8 MB.", true);
+      return;
+    }
+
+    clearPreview();
+    clearPalette();
+    selectedFile = file;
+
+    previewURL = URL.createObjectURL(file);
+    preview.src = previewURL;
+    preview.hidden = false;
+    $("previewFrame").hidden = false;
+    $("placeholder").hidden = true;
+
+    $("fileName").textContent =
+      file.name + " · " + (file.size / 1024 / 1024).toFixed(2) + " MB";
+
+    $("fileName").hidden = false;
+
+    setBusy(false);
+    message("Image selected. Choose a mode and click Extract colors.");
+  }
+
+  function openPicker() {
+    if (busy) return;
+
+    // Allows choosing the same image again.
+    imageInput.value = "";
+    imageInput.click();
+  }
+
+  imageInput.addEventListener("change", () => {
+    selectFile(imageInput.files[0]);
+  });
+
+  $("another").addEventListener("click", openPicker);
+  dropzone.addEventListener("click", openPicker);
+
+  dropzone.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openPicker();
+    }
+  });
+
+  ["dragenter", "dragover"].forEach(name => {
+    dropzone.addEventListener(name, event => {
+      event.preventDefault();
+
+      if (!busy) {
+        dropzone.classList.add("dragover");
+      }
+    });
+  });
+
+  ["dragleave", "drop"].forEach(name => {
+    dropzone.addEventListener(name, event => {
+      event.preventDefault();
+      dropzone.classList.remove("dragover");
+    });
+  });
+
+  dropzone.addEventListener("drop", event => {
+    if (busy) return;
+
+    const files = event.dataTransfer.files;
+
+    if (files.length !== 1) {
+      message("Please drop one image at a time.", true);
+      return;
+    }
+
+    selectFile(files[0]);
+  });
+
+  window.addEventListener("dragover", event => {
+    event.preventDefault();
+  });
+
+  window.addEventListener("drop", event => {
+    event.preventDefault();
+  });
+
+  preview.addEventListener("error", () => {
+    if (!preview.getAttribute("src")) return;
+
+    selectedFile = null;
+    imageInput.value = "";
+    clearPreview();
+    clearPalette();
+    setBusy(false);
+    message("Cannot preview this image. Choose another file.", true);
+  });
+
+  count.addEventListener("change", () => {
+    clearPalette();
+    setBusy(false);
+
+    message(
+      selectedFile
+        ? "Mode changed. Click Extract colors to update the palette."
+        : "Choose an image to get started."
+    );
+  });
+
+  async function copyCode(value) {
+    try {
+      await navigator.clipboard.writeText(value);
+      message("Copied: " + value);
+    } catch {
+      window.prompt("Copy this color code:", value);
+    }
+  }
+
+  function renderPalette() {
+    palette.replaceChildren();
+
+    colors.forEach(color => {
+      const card = document.createElement("div");
+      card.className = "color";
+
+      const swatch = document.createElement("div");
+      swatch.className = "swatch";
+      swatch.style.backgroundColor = color.hex;
+      swatch.setAttribute("role", "img");
+      swatch.setAttribute("aria-label", "Color " + color.hex);
+
+      const details = document.createElement("div");
+      details.className = "details";
+
+      const hex = document.createElement("strong");
+      hex.textContent = color.hex;
+
+      const rgbText = `rgb(${color.rgb.join(", ")})`;
+
+      const rgb = document.createElement("small");
+      rgb.textContent = rgbText;
+
+      const percentage = document.createElement("small");
+      percentage.textContent = `${color.percentage}% of sample`;
+
+      const buttons = document.createElement("div");
+      buttons.className = "copy-actions";
+
+      [
+        ["Copy HEX", color.hex],
+        ["Copy RGB", rgbText]
+      ].forEach(([label, value]) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "secondary";
+        button.textContent = label;
+        button.setAttribute("aria-label", label + " " + value);
+        button.addEventListener("click", () => copyCode(value));
+        buttons.appendChild(button);
+      });
+
+      details.append(hex, rgb, percentage, buttons);
+      card.append(swatch, details);
+      palette.appendChild(card);
+    });
+
+    palette.scrollTop = 0;
+  }
+
+  $("form").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    if (busy || !selectedFile) return;
+
+    const mode = count.value;
+    const data = new FormData();
+
+    data.append("image", selectedFile);
+    data.append("count", mode);
+
+    clearPalette();
+    setBusy(true);
+    message("Processing your image. Finding its colors...");
+
+    try {
+      const response = await fetch("/api/extract", {
+        method: "POST",
+        body: data
+      });
+
+      let result;
+
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          "The server returned an unexpected response. Check the Python terminal."
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(result.error || "Extraction failed.");
+      }
+
+      if (!Array.isArray(result.colors) || !result.colors.length) {
+        throw new Error("No colors were returned. Try another image.");
+      }
+
+      colors = result.colors;
+      renderPalette();
+
+      message(
+        mode === "auto"
+          ? `Auto Extraction found ${colors.length} shade groups.`
+          : `Extracted ${colors.length} main colors.`
+      );
+
+    } catch (error) {
+      message(
+        error instanceof TypeError
+          ? "Cannot connect. Make sure the Python server is running."
+          : error.message,
+        true
+      );
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  $("resetButton").addEventListener("click", () => {
+    if (busy) return;
+
+    selectedFile = null;
+    imageInput.value = "";
+    count.value = "5";
+
+    clearPreview();
+    clearPalette();
+    setBusy(false);
+
+    message("Reset complete. Choose another image.");
+  });
+
+  $("download").addEventListener("click", () => {
+    if (busy || !colors.length) return;
+
+    const canvas = document.createElement("canvas");
+    const columns = colors.length > 10 ? 4 : 2;
+    const cellWidth = 400;
+    const cellHeight = 145;
+
+    canvas.width = columns * cellWidth + 80;
+    canvas.height = 130 + Math.ceil(colors.length / columns) * cellHeight;
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      message("Your browser could not create the palette image.", true);
+      return;
+    }
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "#302443";
+    ctx.font = "bold 30px Arial";
+    ctx.fillText("Color Palette Extractor", 40, 50);
+
+    ctx.font = "18px Arial";
+    ctx.fillText(
+      `${colors.length} colors | Approximate sampled palette`,
+      40,
+      80
+    );
+
+    colors.forEach((color, index) => {
+      const x = 40 + (index % columns) * cellWidth;
+      const y = 110 + Math.floor(index / columns) * cellHeight;
+
+      ctx.fillStyle = color.hex;
+      ctx.fillRect(x, y, cellWidth - 25, 60);
+
+      ctx.fillStyle = "#302443";
+      ctx.font = "bold 21px Arial";
+      ctx.fillText(color.hex, x, y + 86);
+
+      ctx.font = "17px Arial";
+      ctx.fillText(
+        `RGB ${color.rgb.join(", ")} | ${color.percentage}%`,
+        x,
+        y + 112
+      );
+    });
+
+    canvas.toBlob(blob => {
+      if (!blob) {
+        message("Download failed. Please try again.", true);
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "color-palette.png";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      message("Palette PNG download started.");
+    }, "image/png");
+  });
+
+  clearPalette();
+</script>
+</body>
+</html>
